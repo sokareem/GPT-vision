@@ -1,4 +1,6 @@
 #GPT_vision.py
+import io
+from PIL import Image
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.params import Form
 from flask.cli import load_dotenv
@@ -25,6 +27,20 @@ logging.basicConfig(level=logging.INFO)
 class ImageRequest(BaseModel):
     url: Optional[str] = None
 
+def optimize_image(image_file):
+    # Open the image file
+    with Image.open(image_file) as img:
+        # Resize the image (e.g., to 800x800) while maintaining the aspect ratio
+        img.thumbnail((800, 800), Image.ANTIALIAS)
+        
+        # Create a BytesIO object to hold the image data
+        img_byte_arr = io.BytesIO()
+        # Save the image as JPEG with quality 85 (adjust as necessary)
+        img.save(img_byte_arr, format='JPEG', quality=85)
+        img_byte_arr.seek(0)  # Move to the start of the BytesIO buffer
+        
+        return img_byte_arr
+
 @app.post("/analyze-image/")
 async def analyze_image(
     file: Optional[UploadFile] = File(None),
@@ -35,8 +51,11 @@ async def analyze_image(
         raise HTTPException(status_code=400, detail="No file uploaded.")
 
     try:
+       
+        # Optimize the image
+        img_byte_arr = optimize_image(file.file)
         # Read the image file and encode it to base64
-        contents = await file.read()
+        contents = await img_byte_arr.read()
         encoded_image = base64.b64encode(contents).decode('utf-8')
 
         # Try to guess the MIME type from the filename
