@@ -1,5 +1,6 @@
 #GPT_vision.py
 from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi.params import Form
 from flask.cli import load_dotenv
 from pydantic import BaseModel
 from typing import Optional
@@ -26,8 +27,13 @@ class ImageRequest(BaseModel):
 
 @app.post("/analyze-image/")
 async def analyze_image(
-    file: Optional[UploadFile] = File(None)
+    file: Optional[UploadFile] = File(None),
+    response_history: Optional[str] = Form(None),
+    system_prompt: Optional[str] = Form(None)
 ):
+    if not file:
+        raise HTTPException(status_code=400, detail="No file uploaded.")
+
     try:
         # Read the image file and encode it to base64
         contents = await file.read()
@@ -42,26 +48,29 @@ async def analyze_image(
         # Create a data URL (base64-encoded image with MIME type)
         data_url = f"data:{mime_type};base64,{encoded_image}"
 
-        image_content = {
-            "type": "image_url",
-            "image_url": {"url": data_url}
-        }
-        logging.info(f"Converted image file to base64 data URL")
+        image_content = f"Here is the image: {data_url}"
+        logging.info("Converted image file to base64 data URL")
+
     except Exception as e:
         logging.error(f"Failed to process uploaded file: {e}")
         raise HTTPException(status_code=500, detail="Failed to process uploaded file.")
 
-    # Prepare the messages for OpenAI
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "What's in this image?"},
-                image_content
-            ]
-        }
-    ]
+    # Prepare messages for OpenAI API
+    messages = []
 
+    # Include system prompt if provided
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
+    # Include response history if provided
+    if response_history:
+        messages.append({"role": "user", "content": response_history})
+
+    # Include user request about the image
+    messages.append({
+        "role": "user",
+        "content": f"What's in this image? {image_content}"
+    })
     try:
         # Send request to OpenAI's ChatCompletion API
         response = openai.ChatCompletion.create(
