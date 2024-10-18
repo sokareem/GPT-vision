@@ -51,11 +51,11 @@ async def analyze_image(
         raise HTTPException(status_code=400, detail="No file uploaded.")
 
     try:
-       
         # Optimize the image
         img_byte_arr = optimize_image(file.file)
+
         # Read the image file and encode it to base64
-        contents = await img_byte_arr.read()
+        contents = img_byte_arr.getvalue()  # Get the bytes directly from BytesIO
         encoded_image = base64.b64encode(contents).decode('utf-8')
 
         # Try to guess the MIME type from the filename
@@ -68,7 +68,7 @@ async def analyze_image(
         data_url = f"data:{mime_type};base64,{encoded_image}"
 
         image_content = f"Here is the image: {data_url}"
-        logging.info("Converted image file to base64 data URL. "+image_content)
+        logging.info("Converted image file to base64 data URL. " + image_content)
 
     except Exception as e:
         logging.error(f"Failed to process uploaded file: {e}")
@@ -79,23 +79,22 @@ async def analyze_image(
 
     # Include system prompt if provided
     if system_prompt:
-        if len(system_prompt) > 100: # For rate limit
+        if len(system_prompt) > 100:  # For rate limit
             messages.append({"role": "system", "content": "You're a helpful and keen image analyst"})
         else:
             messages.append({"role": "system", "content": system_prompt})
 
     # Include response history if provided
     if response_history:
-        messages.append({"role": "user", "content":f"{response_history} {image_content}"})
-
-    # Include user request about the image
+        messages.append({"role": "user", "content": f"{response_history} {image_content}"})
     else: 
         messages.append({
             "role": "user",
             "content": f"What's in this image? {image_content}"
         })
 
-    logging.info("Message structure:", messages)
+    logging.info("Message structure: %s", messages)
+    
     try:
         # Send request to OpenAI's ChatCompletion API
         response = openai.ChatCompletion.create(
@@ -113,7 +112,3 @@ async def analyze_image(
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
