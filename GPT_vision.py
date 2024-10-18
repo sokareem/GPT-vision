@@ -64,13 +64,13 @@ async def analyze_image(
 
     # Include response history if provided
     if response_history:
-        messages.append({"role": "user", "content": response_history + {image_content}})
+        messages.append({"role": "user", "content": response_history})
 
-    else: # Include user request about the image
-        messages.append({
-            "role": "user",
-            "content": f"What's in this image? {image_content}"
-        })
+    # Include user request about the image
+    messages.append({
+        "role": "user",
+        "content": f"What's in this image? {image_content}"
+    })
     try:
         # Send request to OpenAI's ChatCompletion API
         response = openai.ChatCompletion.create(
