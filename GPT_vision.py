@@ -80,7 +80,7 @@ async def analyze_image(
     try:
         # Send request to OpenAI's ChatCompletion API
         response = openai.ChatCompletion.create(
-            model="gpt-4o mini",  # Ensure this is the correct model name
+            model="gpt-4o-mini",  # Ensure this is the correct model name
             messages=messages,
             max_tokens=500
         )
