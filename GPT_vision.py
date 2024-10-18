@@ -65,8 +65,7 @@ async def analyze_image(
         logging.info(f"Using MIME type: {mime_type}")
 
         # Create a data URL (base64-encoded image with MIME type)
-        # data_url = f"data:{mime_type};base64,{encoded_image}"
-        data_url = file.file
+        data_url = f"data:{mime_type};base64,{encoded_image}"
 
         image_content = f"Here is the image: {data_url}"
         logging.info("Converted image file to base64 data URL. " + image_content)
