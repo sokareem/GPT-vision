@@ -1,1 +1,1 @@
-web: python GPT_vision/GPT_vision.py
+web: python GPT_vision.py
