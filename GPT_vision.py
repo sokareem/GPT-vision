@@ -31,7 +31,7 @@ def optimize_image(image_file):
     # Open the image file
     with Image.open(image_file) as img:
         # Resize the image (e.g., to 800x800) while maintaining the aspect ratio
-        img.thumbnail((800, 800), Image.ANTIALIAS)
+        img.thumbnail((800, 800), Image.LANCZOS)  # Use LANCZOS instead of ANTIALIAS
         
         # Create a BytesIO object to hold the image data
         img_byte_arr = io.BytesIO()
