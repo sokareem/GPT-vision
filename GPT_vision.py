@@ -49,7 +49,7 @@ async def analyze_image(
         data_url = f"data:{mime_type};base64,{encoded_image}"
 
         image_content = f"Here is the image: {data_url}"
-        logging.info("Converted image file to base64 data URL")
+        logging.info("Converted image file to base64 data URL. "+image_content)
 
     except Exception as e:
         logging.error(f"Failed to process uploaded file: {e}")
@@ -60,7 +60,10 @@ async def analyze_image(
 
     # Include system prompt if provided
     if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
+        if len(system_prompt) > 100: # For rate limit
+            messages.append({"role": "system", "content": "You're a helpful and keen image analyst"})
+        else:
+            messages.append({"role": "system", "content": system_prompt})
 
     # Include response history if provided
     if response_history:
@@ -72,12 +75,14 @@ async def analyze_image(
             "role": "user",
             "content": f"What's in this image? {image_content}"
         })
+
+    logging.info("Message structure:", messages)
     try:
         # Send request to OpenAI's ChatCompletion API
         response = openai.ChatCompletion.create(
-            model="gpt-4o",  # Ensure this is the correct model name
+            model="gpt-4o mini",  # Ensure this is the correct model name
             messages=messages,
-            max_tokens=300
+            max_tokens=500
         )
         # Extract the assistant's reply
         assistant_reply = response.choices[0].message.content
