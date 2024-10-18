@@ -64,7 +64,7 @@ async def analyze_image(
 
     # Include response history if provided
     if response_history:
-        messages.append({"role": "user", "content": response_history})
+        messages.append({"role": "user", "content": response_history + {image_content}})
 
     else: # Include user request about the image
         messages.append({
