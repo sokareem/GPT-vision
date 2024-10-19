@@ -20,6 +20,12 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 app = FastAPI()
 
+
+# Function to encode the image
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
@@ -51,64 +57,38 @@ async def analyze_image(
         raise HTTPException(status_code=400, detail="No file uploaded.")
 
     try:
-        # Optimize the image
-        img_byte_arr = optimize_image(file.file)
+        # Getting the base64 string
+        base64_image = encode_image(file)
 
-        # Read the image file and encode it to base64
-        contents = img_byte_arr.getvalue()  # Get the bytes directly from BytesIO
-        encoded_image = base64.b64encode(contents).decode('utf-8')
-
-        # Try to guess the MIME type from the filename
-        mime_type, _ = mimetypes.guess_type(file.filename)
-        if not mime_type:
-            mime_type = 'application/octet-stream'
-        logging.info(f"Using MIME type: {mime_type}")
-
-        # Create a data URL (base64-encoded image with MIME type)
-        data_url = f"data:{mime_type};base64,{encoded_image}"
-
-        image_content = f"Here is the image: {data_url}"
-        logging.info("Converted image file to base64 data URL. " + image_content)
-
-    except Exception as e:
-        logging.error(f"Failed to process uploaded file: {e}")
-        raise HTTPException(status_code=500, detail="Failed to process uploaded file.")
-
-    # Prepare messages for OpenAI API
-    messages = []
-
-    # Include system prompt if provided
-    if system_prompt:
-        if len(system_prompt) > 100:  # For rate limit
-            messages.append({"role": "system", "content": "You're a helpful and keen image analyst"})
-        else:
-            messages.append({"role": "system", "content": system_prompt})
-
-    # Include response history if provided
-    if response_history:
-        messages.append({"role": "user", "content": f"{response_history} {image_content}"})
-    else: 
-        messages.append({
+        response = openai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
             "role": "user",
-            "content": f"What's in this image? {image_content}"
-        })
-
-    logging.info("Message structure: %s", messages)
-    
-    try:
-        # Send request to OpenAI's ChatCompletion API
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",  # Ensure this is the correct model name
-            messages=messages,
-            max_tokens=500
+            "content": [
+                {
+                "type": "text",
+                "text": "What is in this image?",
+                },
+                {
+                "type": "image_url",
+                "image_url": {
+                    "url":  f"data:image/jpeg;base64,{base64_image}"
+                },
+                },
+            ],
+            }
+        ],
         )
-        # Extract the assistant's reply
-        assistant_reply = response.choices[0].message.content
-        logging.info("Received response from OpenAI.")
-        return {"response": assistant_reply}
+        assistant_reply = response.choices[0]
+        logging.info("responses: ",response.choices[0])
     except openai.OpenAIError as e:
         logging.error(f"OpenAI API error: {e}")
         raise HTTPException(status_code=500, detail="Error communicating with OpenAI API.")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+    
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
