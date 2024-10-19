@@ -49,7 +49,7 @@ def optimize_image(image_file):
 
 @app.post("/analyze-image/")
 async def analyze_image(
-    file: Optional[UploadFile] = File(None),
+    file: Optional[str] = File(None),
     response_history: Optional[str] = Form(None),
     system_prompt: Optional[str] = Form(None)
 ):
