@@ -49,7 +49,7 @@ def optimize_image(image_file):
 
 @app.post("/analyze-image/")
 async def analyze_image(
-    file: Optional[str] = File(None),
+    file: Optional[str] = str,
     response_history: Optional[str] = Form(None),
     system_prompt: Optional[str] = Form(None)
 ):
@@ -58,7 +58,10 @@ async def analyze_image(
 
     try:
         # Getting the base64 string
+        logging.info("File received from Cerebra: ",file)
         base64_image = encode_image(file)
+        logging.info("Encoded image: "+ base64_image)
+
 
         response = openai.chat.completions.create(
         model="gpt-4o-mini",
