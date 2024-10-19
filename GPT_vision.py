@@ -58,7 +58,7 @@ async def analyze_image(
 
     try:
         # Getting the base64 string
-        logging.info("File received from Cerebra: ",file.filename)
+        logging.info("File received from Cerebra: "+str(file.filename))
         base64_image = encode_image(file.file)
         logging.info("Encoded image: "+ base64_image)
 
