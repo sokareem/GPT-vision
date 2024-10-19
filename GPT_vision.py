@@ -49,7 +49,7 @@ def optimize_image(image_file):
 
 @app.post("/analyze-image/")
 async def analyze_image(
-    file: Optional[str] = str,
+    file: Optional[UploadFile] = File(None),
     response_history: Optional[str] = Form(None),
     system_prompt: Optional[str] = Form(None)
 ):
@@ -58,8 +58,8 @@ async def analyze_image(
 
     try:
         # Getting the base64 string
-        logging.info("File received from Cerebra: ",file)
-        base64_image = encode_image(file)
+        logging.info("File received from Cerebra: ",file.filename)
+        base64_image = encode_image(file.file)
         logging.info("Encoded image: "+ base64_image)
 
 
